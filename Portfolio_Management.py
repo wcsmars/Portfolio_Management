@@ -1,3 +1,4 @@
+import pandas as pd
 import numpy as np
 import datetime as dt
 import yfinance as yf
@@ -19,7 +20,9 @@ def portfolioPerformance(weights, meanReturns, covarianceMatrix):
     return returns, standard_deviation
 
 '''
+
 Maximize Sharpe Ratio
+
 '''
 
 def negativeSR(weights, meanReturns, covarianceMatrix, risk_free_rate):
@@ -55,6 +58,27 @@ def minimizeVariance(meanReturns, covarianceMatrix):
 
 '''
 
+Output result function
+
+'''
+
+def sharpe_outputs(meanReturns, risk_free_rate, covarianceMatrix):
+    maxSharpe = maxSR(meanReturns, covarianceMatrix, risk_free_rate)
+    maxSharpe_Return, maxSharpe_STD = portfolioPerformance(maxSharpe['x'], meanReturns, covarianceMatrix)
+    maxSharpe_Allocation = pd.DataFrame(maxSharpe['x'], index = meanReturns.index, columns = ['Weights'])
+    maxSharpe_Allocation.Weights = [round(i * 100, 0) for i in maxSharpe_Allocation.Weights]
+    return maxSharpe_Return, maxSharpe_STD, maxSharpe_Allocation
+
+def minimumVariance_outputs(meanReturns, covarianceMatrix):
+    minimumVariance = minimizeVariance(meanReturns, covarianceMatrix)
+    minimumVariance_Return, minimumVariance_STD = portfolioPerformance(minimumVariance['x'], meanReturns, covarianceMatrix)
+    minimumVariance_Allocation = pd.DataFrame(minimumVariance['x'], index = meanReturns.index, columns = ['Weights'])
+    minimumVariance_Allocation.Weights = [round(i * 100, 0) for i in minimumVariance_Allocation.Weights]
+    return minimumVariance_Return, minimumVariance_STD, minimumVariance_Allocation
+
+
+'''
+
 Inputs
 
 '''
@@ -64,8 +88,8 @@ risk_free_rate = 0.04 # change the input to current Treasury Yield
 endDate = dt.datetime.now()
 startDate = endDate - dt.timedelta(days = 365)
 
-portfolio = ['^GSPC', 'TSLA', 'NVDA'] # example with S&P500, TESLA, NVIDA
-weights = np.array([1/len(portfolio), 1/len(portfolio), 1/len(portfolio)])
+portfolio = ['^GSPC', '^HSI'] # input tickers
+weights = np.array([1/len(portfolio), 1/len(portfolio)]) # adjustment needed, use for-loop instead
 
 
 '''
@@ -81,6 +105,10 @@ returns, standard_deviation = portfolioPerformance(weights, meanReturns, covaria
 # maxSharpe, optimal_weights = result['fun'], result['x']
 # print(maxSharpe, optimal_weights)
 
-result = minimizeVariance(meanReturns, covarianceMatrix)
-mininumVariance, optimal_weights = result['fun'], result['x']
-print(mininumVariance, optimal_weights)
+# result = minimizeVariance(meanReturns, covarianceMatrix)
+# mininumVariance, optimal_weights = result['fun'], result['x']
+# print(mininumVariance, optimal_weights)
+
+# print(sharpe_outputs(meanReturns, risk_free_rate, covarianceMatrix))
+
+print(minimumVariance_outputs(meanReturns, covarianceMatrix))
