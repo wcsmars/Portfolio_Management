@@ -18,23 +18,13 @@ def portfolioPerformance(weights, meanReturns, covarianceMatrix):
     standard_deviation = np.sqrt(portfolio_variance) * np.sqrt(252)
     return returns, standard_deviation
 
-
-endDate = dt.datetime.now()
-startDate = endDate - dt.timedelta(days = 365)
-
-portfolio = ['^GSPC', 'TSLA', 'NVDA'] # example with S&P500, TESLA, NVIDA
-weights = np.array([1/len(portfolio), 1/len(portfolio), 1/len(portfolio)])
-
-
-meanReturns, covarianceMatrix = getData(portfolio, start = startDate, end = endDate)
-returns, standard_deviation = portfolioPerformance(weights, meanReturns, covarianceMatrix)
-
+'''
+Maximize Sharpe Ratio
+'''
 
 def negativeSR(weights, meanReturns, covarianceMatrix, risk_free_rate):
     portfolioReturn, portfolioSTD = portfolioPerformance(weights, meanReturns, covarianceMatrix)
     return - (portfolioReturn - risk_free_rate) / portfolioSTD # negative sharpe ratio here because I use the minimize function to maximize the postive sharp ratio
-
-risk_free_rate = 0.04 # change the input to current Treasury Yield
 
 def maxSR(meanReturns, covarianceMatrix, risk_free_rate):
     num_of_assets = len(portfolio)
@@ -45,6 +35,52 @@ def maxSR(meanReturns, covarianceMatrix, risk_free_rate):
                          method = 'SLSQP', bounds = bounds, constraints = constraints)
     return result
 
-result = (maxSR(meanReturns, covarianceMatrix, risk_free_rate))
-maxSharpe, optimal_weights = result['fun'], result['x']
-print(maxSharpe, optimal_weights)
+'''
+
+Minimize Portfolio Variance
+
+'''
+
+def portfolioVariance(weights, meanReturns, covarianceMatrix):
+    return portfolioPerformance(weights, meanReturns, covarianceMatrix)[1]
+
+def minimizeVariance(meanReturns, covarianceMatrix):
+    num_of_assets = len(portfolio)
+    args = (meanReturns, covarianceMatrix)
+    constraints = ({'type': 'eq', 'fun': lambda x: np.sum(x) - 1})
+    bounds = tuple((0,1) for asset in range(num_of_assets))
+    result = sc.minimize(portfolioVariance, num_of_assets * [1. / num_of_assets], args = args,
+                         method = 'SLSQP', bounds = bounds, constraints = constraints)
+    return result
+
+'''
+
+Inputs
+
+'''
+
+risk_free_rate = 0.04 # change the input to current Treasury Yield
+
+endDate = dt.datetime.now()
+startDate = endDate - dt.timedelta(days = 365)
+
+portfolio = ['^GSPC', 'TSLA', 'NVDA'] # example with S&P500, TESLA, NVIDA
+weights = np.array([1/len(portfolio), 1/len(portfolio), 1/len(portfolio)])
+
+
+'''
+
+Outputs
+
+'''
+
+meanReturns, covarianceMatrix = getData(portfolio, start = startDate, end = endDate)
+returns, standard_deviation = portfolioPerformance(weights, meanReturns, covarianceMatrix)
+
+# result = (maxSR(meanReturns, covarianceMatrix, risk_free_rate))
+# maxSharpe, optimal_weights = result['fun'], result['x']
+# print(maxSharpe, optimal_weights)
+
+result = minimizeVariance(meanReturns, covarianceMatrix)
+mininumVariance, optimal_weights = result['fun'], result['x']
+print(mininumVariance, optimal_weights)
